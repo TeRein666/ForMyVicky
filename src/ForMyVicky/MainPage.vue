@@ -14,8 +14,16 @@ const cuteImages = [cute1ImageUrl, cute2ImageUrl, cute3ImageUrl];
 // 建立一個響應式狀態 isYesClicked，用來追蹤「好」按鈕是否被點擊
 const isYesClicked = ref(false);
 
-// 新增狀態，用來控制是否顯示「下一頁」的內容
-const showNextPage = ref(false);
+// 將頁面步驟改為數字，以便管理多個頁面
+// 0: 聞屁頁, 1: 文字輸入頁, 2: 最終卡片頁
+const resultStep = ref(0);
+
+const userMessage = ref(''); // 用來儲存使用者輸入的文字
+
+// 新增：錯誤/成功訊息的響應式狀態
+const errorMessage = ref('');
+const successMessage = ref('');
+const isChecking = ref(false); // 用來在驗證期間禁用按鈕
 
 // 新增：雪花效果的樣式陣列
 const snowflakeStyles = ref([]);
@@ -72,9 +80,38 @@ const moveNoButton = (event) => {
   noButtonPosition.value = { top: newTop, left: newLeft };
 };
 
-// 修改：點擊「下一頁」按鈕的事件處理函式，用來顯示圖片頁面
-const goToNextPage = () => {
-  showNextPage.value = true;
+// 修改：點擊「下一頁」按鈕的事件處理函式，用來推進到下一個步驟
+const goToNextStep = () => {
+  // 在步驟 0 (聞屁頁)，直接進入下一步驟
+  if (resultStep.value === 0) {
+    resultStep.value++;
+    return;
+  }
+  // 在步驟 1 (稱號輸入頁)，需要驗證稱號
+  else if (resultStep.value === 1) {
+    if (isChecking.value) return; // 如果正在倒數，則不執行任何操作
+
+    if (userMessage.value.trim() === '雞腿') {
+      isChecking.value = true; // 禁用按鈕
+      errorMessage.value = ''; // 清除錯誤訊息
+      let countdown = 3;
+      successMessage.value = `答對了！ ${countdown} 秒後顯示卡片...`;
+
+      const interval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          successMessage.value = `答對了！ ${countdown} 秒後顯示卡片...`;
+        } else {
+          clearInterval(interval);
+          resultStep.value++; // 倒數結束後跳轉
+        }
+      }, 1000);
+    } else {
+      // 驗證失敗，顯示提示並清空輸入
+      errorMessage.value = '臭寶！稱號打錯了啦！再試一次！';
+      userMessage.value = '';
+    }
+  }
 };
 </script>
 
@@ -111,24 +148,35 @@ const goToNextPage = () => {
 
     <!-- 當 isYesClicked 變成 true 時，顯示這個成功區塊 -->
     <div v-else class="result-container">
-      <!-- "下一頁" 的內容 -->
-      <template v-if="showNextPage">
+      <!-- 步驟 2: 最終卡片頁 -->
+      <template v-if="resultStep === 2">
         <!-- 顯示可愛圖片的區塊 (移到最上面) -->
         <div class="image-gallery">
           <img v-for="(image, index) in cuteImages" :key="index" :src="image" alt="可愛圖片" class="cute-image" />
         </div>
 
-        <h1>這是我的卡片!!</h1>
-
+        
+        <h2>嗨臭寶(雞腿)</h2>
         <!-- 新增的文字區塊 -->
         <p class="message-text">
-          嗨臭寶(雞腿)<br>
-          這是今年的聖誕卡片!!<br>
+          聖誕快樂!我們在一起3年多ㄌ，覺得跟你在一起的時候時間都過好快(快樂啦)，中間有好多困難我們一起度過，
+          你工作常常會跟我抱怨，但你還是很負責任的把他們做好，雖然常常成果不是很好，但你還是朝著你喜歡的事物前進(我覺得很棒喔)，以後我還是會繼續支持你做的東東然後給你些有用的建議，
+          就這樣!!愛你的雞腿男!!<br>
+          <br>
         </p>
       </template>
 
-      <!-- 初始 "結果" 頁的內容 -->
-      <template v-else>
+      <!-- 步驟 1: 新增的文字輸入頁 -->
+      <template v-else-if="resultStep === 1">
+        <h1>你要答對你的稱號才能領取你的卡片</h1>
+        <textarea v-model="userMessage" @input="errorMessage = ''" class="message-textarea" placeholder="輸入你的稱號！(提示：一個好吃的部位)"></textarea>
+        <button class="btn btn-next" @click="goToNextStep" :disabled="isChecking">完成！</button>
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+        <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
+      </template>
+
+      <!-- 步驟 0: 初始 "結果" 頁的內容 -->
+      <template v-else-if="resultStep === 0">
         <h1>聖誕快樂!!</h1>
         <h2>但你得先聞我的pp!</h2>
         <!-- 火柴人放屁動畫 -->
@@ -139,7 +187,7 @@ const goToNextPage = () => {
           </div>
         </div>
         <!-- 下一頁按鈕 -->
-        <button class="btn btn-next" @click="goToNextPage">下一頁</button>
+        <button class="btn btn-next" @click="goToNextStep">下一頁</button>
       </template>
     </div>
   </div>
@@ -207,6 +255,47 @@ h2 { font-size: 2rem; color: #ad1457; }
   width: 150px; height: 150px; object-fit: cover; /* 確保圖片不變形 */
   border-radius: 10px; /* 圓角 */
   box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* 陰影效果 */
+}
+
+/* --- 新增：文字輸入框樣式 --- */
+.message-textarea {
+  width: 90%;
+  max-width: 500px;
+  height: 150px;
+  margin-top: 20px;
+  padding: 15px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  resize: vertical;
+  font-family: inherit; /* 繼承父層的字體 */
+}
+
+/* --- 新增：顯示使用者留言的樣式 --- */
+.user-message-display {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.7); /* 半透明白色背景 */
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: left;
+}
+.user-message-display p:first-child { color: #ad1457; margin-bottom: 10px; }
+.user-text { white-space: pre-wrap; font-size: 1.1rem; color: #333; line-height: 1.6; }
+
+/* --- 新增：錯誤與成功訊息樣式 --- */
+.error-message {
+  margin-top: 15px;
+  color: #c2185b; /* 使用主題的深紅色 */
+  font-weight: bold;
+}
+
+.success-message {
+  margin-top: 15px;
+  color: #4caf50; /* 綠色 */
+  font-weight: bold;
 }
 
 /* --- 動畫相關樣式 --- */
