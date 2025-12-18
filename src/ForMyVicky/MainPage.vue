@@ -1,15 +1,23 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 
-// 從 src/assets 資料夾匯入圖片。
+// 從當前資料夾匯入資源。
 // Vite/Webpack 會處理這個路徑，並在建置時將其轉換為最終可用的 URL。
 import stickFigureImageUrl from './Man.png'; // 將路徑從 @/assets/ 改為 ./ (當前資料夾)
 import cute1ImageUrl from './cute1.png';
 import cute2ImageUrl from './cute2.png';
 import cute3ImageUrl from './cute3.png';
+import cute4ImageUrl from './cute4.png';  
+// 匯入音樂檔案。請確保您在同一個資料夾下有一個名為 `christmas-music.mp3` 的音樂檔。
+import christmasMusicUrl from './music.mp3';
+import fartSoundUrl from './fart.mp3'; // 匯入放屁音效
+import tree1GifUrl from './tree1.gif'; // 匯入聖誕樹 GIF
+import tree2GifUrl from './tree2.gif'; // 匯入聖誕樹 GIF
+import coolImageUrl from './cool.png'; // 匯入 cool 圖片
+
 
 // 將可愛圖片放入一個陣列中，方便在模板中使用 v-for
-const cuteImages = [cute1ImageUrl, cute2ImageUrl, cute3ImageUrl];
+const cuteImages = [cute1ImageUrl, cute2ImageUrl, cute3ImageUrl, cute4ImageUrl];
 
 // 建立一個響應式狀態 isYesClicked，用來追蹤「好」按鈕是否被點擊
 const isYesClicked = ref(false);
@@ -19,6 +27,10 @@ const isYesClicked = ref(false);
 const resultStep = ref(0);
 
 const userMessage = ref(''); // 用來儲存使用者輸入的文字
+
+// 新增：建立一個 audio 元素的響應式引用
+const audioPlayer = ref(null);
+const fartAudioPlayer = ref(null); // 新增：放屁音效的 audio 元素引用
 
 // 新增：錯誤/成功訊息的響應式狀態
 const errorMessage = ref('');
@@ -62,6 +74,14 @@ const noButtonStyle = computed(() => {
 // 「好」按鈕的點擊事件處理函式
 const handleYesClick = () => {
   isYesClicked.value = true;
+  // 當使用者點擊「好」之後，開始播放音樂
+  // 使用 nextTick 確保 audio 元素已經被渲染出來
+  if (audioPlayer.value) {
+    audioPlayer.value.play().catch(error => {
+      // 處理瀏覽器阻止自動播放的錯誤
+      console.error("音樂播放失敗：", error);
+    });
+  }
 };
 
 // 「不好」按鈕的滑鼠移入事件處理函式
@@ -82,25 +102,20 @@ const moveNoButton = (event) => {
 
 // 修改：點擊「下一頁」按鈕的事件處理函式，用來推進到下一個步驟
 const goToNextStep = () => {
-  // 在步驟 0 (聞屁頁)，直接進入下一步驟
-  if (resultStep.value === 0) {
-    resultStep.value++;
-    return;
-  }
   // 在步驟 1 (稱號輸入頁)，需要驗證稱號
-  else if (resultStep.value === 1) {
+  if (resultStep.value === 1) {
     if (isChecking.value) return; // 如果正在倒數，則不執行任何操作
 
     if (userMessage.value.trim() === '雞腿') {
       isChecking.value = true; // 禁用按鈕
       errorMessage.value = ''; // 清除錯誤訊息
       let countdown = 3;
-      successMessage.value = `答對了！ ${countdown} 秒後顯示卡片...`;
+      successMessage.value = `答對了啦！ ${countdown} 秒後顯示卡片...`;
 
       const interval = setInterval(() => {
         countdown--;
         if (countdown > 0) {
-          successMessage.value = `答對了！ ${countdown} 秒後顯示卡片...`;
+          successMessage.value = `答對了啦！ ${countdown} 秒後顯示卡片...`;
         } else {
           clearInterval(interval);
           resultStep.value++; // 倒數結束後跳轉
@@ -108,9 +123,22 @@ const goToNextStep = () => {
       }, 1000);
     } else {
       // 驗證失敗，顯示提示並清空輸入
-      errorMessage.value = '臭寶！稱號打錯了啦！再試一次！';
+      errorMessage.value = '錯！!喇搭貴!!';
       userMessage.value = '';
     }
+  } else {
+    // 其他頁面 (步驟 0, 2) 直接進入下一步驟
+    resultStep.value++;
+  }
+};
+
+// 新增：點擊火柴人圖片播放音效的函式
+const playFartSound = () => {
+  if (fartAudioPlayer.value) {
+    fartAudioPlayer.value.currentTime = 0; // 每次點擊都從頭播放
+    fartAudioPlayer.value.play().catch(error => {
+      console.error("音效播放失敗：", error);
+    });
   }
 };
 </script>
@@ -118,11 +146,21 @@ const goToNextStep = () => {
 
 <template>
   <div class="container">
+    <!-- 新增：背景音樂播放器，預設隱藏 -->
+    <audio ref="fartAudioPlayer" :src="fartSoundUrl"></audio>
+    <audio ref="audioPlayer" :src="christmasMusicUrl" loop></audio>
+
     <!-- 下雪特效 -->
     <div class="snow-container">
       <!-- 使用 v-for 根據產生的樣式來渲染雪花 -->
       <div v-for="(style, index) in snowflakeStyles" :key="index" class="snowflake" :style="style"></div>
     </div>
+
+    <!-- 新增：聖誕樹 GIF，只在點擊「好」之後顯示 -->
+    <template v-if="isYesClicked && resultStep < 2">
+      <img :src="tree1GifUrl" alt="聖誕樹" class="christmas-tree tree-left" />
+      <img :src="tree2GifUrl" alt="聖誕樹" class="christmas-tree tree-right" />
+    </template>
 
     <!-- v-if 會根據 isYesClicked 的值來決定要顯示哪個區塊 -->
     <div v-if="!isYesClicked" class="question-container">
@@ -157,13 +195,23 @@ const goToNextStep = () => {
 
         
         <h2>嗨臭寶(雞腿)</h2>
+        
+
         <!-- 新增的文字區塊 -->
         <p class="message-text">
           聖誕快樂!我們在一起3年多ㄌ，覺得跟你在一起的時候時間都過好快(快樂啦)，中間有好多困難我們一起度過，
           你工作常常會跟我抱怨，但你還是很負責任的把他們做好，雖然常常成果不是很好，但你還是朝著你喜歡的事物前進(我覺得很棒喔)，以後我還是會繼續支持你做的東東然後給你些有用的建議，
+          希望我們明年可以出國2次!!每次出國玩都好快樂喔，但我也想跟家人但也想跟你，好猶豫喔(>,<)，好啦愛妳拉臭臭，明年一起加油ㄋ一ㄚ!!
           就這樣!!愛你的雞腿男!!<br>
           <br>
         </p>
+        <!-- 新增：前往下一頁的小按鈕 -->
+        <button class="btn btn-small-next" @click="goToNextStep">Some cool shit</button>
+      </template>
+
+      <!-- 步驟 3: 顯示 cool.png 的最終頁 -->
+      <template v-else-if="resultStep === 3">
+        <img :src="coolImageUrl" alt="Cool" class="cool-image" />
       </template>
 
       <!-- 步驟 1: 新增的文字輸入頁 -->
@@ -181,9 +229,10 @@ const goToNextStep = () => {
         <h2>但你得先聞我的pp!</h2>
         <!-- 火柴人放屁動畫 -->
         <div class="animation-wrapper">
-          <div class="stick-figure-container">
+          <div class="stick-figure-container" @click="playFartSound" style="cursor: pointer;">
             <img :src="stickFigureImageUrl" alt="火柴人" class="stick-figure-image" />
             <div class="fart-cloud"></div>
+            <div class="click-me-text">Click me!!!</div>
           </div>
         </div>
         <!-- 下一頁按鈕 -->
@@ -228,12 +277,28 @@ h2 { font-size: 2rem; color: #ad1457; }
   margin-bottom: 20px; /* 在圖片和動畫之間增加一些間距 */
   object-fit: contain; /* 確保圖片內容完整顯示不變形 */
 }
+
+/* 新增：給 Mygirl GIF 的樣式 */
+.my-girl-gif {
+  max-width: 250px; /* 設定一個最大寬度 */
+  border-radius: 15px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
 /* 新增 flex-wrap: wrap，當螢幕寬度不足時，按鈕會自動換行，從而達成垂直排列的效果 */
 .button-container { display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap; }
 .btn { padding: 15px 30px; font-size: 1.5rem; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
 .btn-yes { background-color: #4caf50; }
 .btn-no { background-color: #f44336; }
 .btn-next { background-color: #2196F3; margin-top: 20px; } /* 新增：下一頁按鈕的樣式 */
+/* 新增：小按鈕的樣式，繼承 .btn 的部分樣式 */
+.btn-small-next {
+  padding: 8px 20px;
+  font-size: 1rem;
+  background-color: #ff85c0; /* 可愛粉紅色 */
+  margin-top: 15px;
+}
 
 /* --- 新增：中間訊息文字樣式 --- */
 .message-text {
@@ -255,6 +320,14 @@ h2 { font-size: 2rem; color: #ad1457; }
   width: 150px; height: 150px; object-fit: cover; /* 確保圖片不變形 */
   border-radius: 10px; /* 圓角 */
   box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* 陰影效果 */
+}
+
+/* 新增：Cool 圖片的樣式 */
+.cool-image {
+  max-width: 90%;
+  max-height: 80vh;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
 /* --- 新增：文字輸入框樣式 --- */
@@ -296,6 +369,45 @@ h2 { font-size: 2rem; color: #ad1457; }
   margin-top: 15px;
   color: #4caf50; /* 綠色 */
   font-weight: bold;
+}
+
+/* --- 新增：點擊提示文字樣式 --- */
+.click-me-text {
+  position: absolute;
+  top: 50%;
+  right: -60px; /* 調整位置，讓它更靠右邊一點 */
+  transform: translateY(-100%); /* 往上移動一點 */
+  background-color: #ff85c0; /* 一個可愛的粉紅色 */
+  color: white;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  pointer-events: none; /* 讓點擊可以穿透文字，觸發火柴人的事件 */
+  animation: bounce-light 2s infinite ease-in-out;
+}
+
+/* --- 新增：輕微跳動動畫 --- */
+@keyframes bounce-light {
+  0%, 100% { transform: translateY(-100%) scale(1); }
+  50% { transform: translateY(-120%) scale(1.05); }
+}
+
+/* --- 新增：聖誕樹樣式 --- */
+.christmas-tree {
+  position: absolute;
+  bottom: 0;
+  width: 180px; /* 調整聖誕樹大小 */
+  height: auto;
+  z-index: 1; /* 確保在內容下方，雪花層級 */
+  pointer-events: none; /* 避免擋住點擊 */
+}
+.tree-left {
+  left: 20px;
+}
+.tree-right {
+  right: 20px;
 }
 
 /* --- 動畫相關樣式 --- */
