@@ -191,9 +191,11 @@ const playFartSound = () => {
           <img v-for="(image, index) in cuteImages" :key="index" :src="image" alt="可愛圖片" class="cute-image" />
         </div>
 
-        
-        <h2>嗨臭寶(雞腿)</h2>
-        
+        <div class="title-container">
+          <h2>嗨臭寶(雞腿)</h2>
+          <!-- 新增：前往下一頁的小按鈕 -->
+          <button class="btn btn-small-next" @click="goToNextStep">Some cool shit</button>
+        </div>
 
         <!-- 新增的文字區塊 -->
         <p class="message-text">
@@ -203,8 +205,6 @@ const playFartSound = () => {
           就這樣!!愛你的雞腿男!!<br>
           <br>
         </p>
-        <!-- 新增：前往下一頁的小按鈕 -->
-        <button class="btn btn-small-next" @click="goToNextStep">Some cool shit</button>
       </template>
 
       <!-- 步驟 3: 顯示 cool.png 的最終頁 -->           
@@ -265,7 +265,7 @@ h1 {
   font-size: clamp(1.5rem, 8vw, 3rem);
   margin-bottom: 40px;
 }
-h2 { font-size: 2rem; color: #ad1457; }
+h2 { font-size: 2rem; color: #ad1457; margin: 0; } /* 移除預設的 margin */
 .card-image {
   max-width: 90%;
   max-height: 40vh; /* 限制最大高度為視窗高度的 40% */
@@ -295,9 +295,16 @@ h2 { font-size: 2rem; color: #ad1457; }
   padding: 8px 20px;
   font-size: 1rem;
   background-color: #ff85c0; /* 可愛粉紅色 */
-  margin-top: 15px;
+  margin-top: 0; /* 移除 margin-top */
 }
 
+/* --- 新增：標題與按鈕的容器 --- */
+.title-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px; /* 標題和按鈕之間的間距 */
+}
 /* --- 新增：中間訊息文字樣式 --- */
 .message-text {
   font-size: 1.2rem;
