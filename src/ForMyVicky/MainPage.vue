@@ -12,7 +12,6 @@ import cute4ImageUrl from './cute4.png';
 import christmasMusicUrl from './music.mp3';
 import fartSoundUrl from './fart.mp3'; // 匯入放屁音效
 import tree1GifUrl from './tree1.gif'; // 匯入聖誕樹 GIF
-import tree2GifUrl from './tree2.gif'; // 匯入聖誕樹 GIF
 import coolImageUrl from './cool.png'; // 匯入 cool 圖片
 
 
@@ -158,8 +157,7 @@ const playFartSound = () => {
 
     <!-- 新增：聖誕樹 GIF，只在點擊「好」之後顯示 -->
     <template v-if="isYesClicked && resultStep < 2">
-      <img :src="tree1GifUrl" alt="聖誕樹" class="christmas-tree tree-left" />
-      <img :src="tree2GifUrl" alt="聖誕樹" class="christmas-tree tree-right" />
+      <img :src="tree1GifUrl" alt="聖誕樹" class="christmas-tree" />
     </template>
 
     <!-- v-if 會根據 isYesClicked 的值來決定要顯示哪個區塊 -->
@@ -209,7 +207,7 @@ const playFartSound = () => {
         <button class="btn btn-small-next" @click="goToNextStep">Some cool shit</button>
       </template>
 
-      <!-- 步驟 3: 顯示 cool.png 的最終頁 -->
+      <!-- 步驟 3: 顯示 cool.png 的最終頁 -->           
       <template v-else-if="resultStep === 3">
         <img :src="coolImageUrl" alt="Cool" class="cool-image" />
       </template>
@@ -397,17 +395,13 @@ h2 { font-size: 2rem; color: #ad1457; }
 /* --- 新增：聖誕樹樣式 --- */
 .christmas-tree {
   position: absolute;
-  bottom: 0;
+  top: 0; /* 改為最上面 */
+  left: 50%; /* 水平置中 */
+  transform: translateX(-50%); /* 水平置中 */
   width: 180px; /* 調整聖誕樹大小 */
   height: auto;
   z-index: 1; /* 確保在內容下方，雪花層級 */
   pointer-events: none; /* 避免擋住點擊 */
-}
-.tree-left {
-  left: 20px;
-}
-.tree-right {
-  right: 20px;
 }
 
 /* --- 動畫相關樣式 --- */
