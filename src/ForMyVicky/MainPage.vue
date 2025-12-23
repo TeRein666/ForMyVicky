@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-
 // 從當前資料夾匯入資源。
 // Vite/Webpack 會處理這個路徑，並在建置時將其轉換為最終可用的 URL。
 import stickFigureImageUrl from './Man.png'; // 將路徑從 @/assets/ 改為 ./ (當前資料夾)
@@ -24,6 +23,12 @@ const isYesClicked = ref(false);
 // 將頁面步驟改為數字，以便管理多個頁面
 // 0: 聞屁頁, 1: 文字輸入頁, 2: 最終卡片頁
 const resultStep = ref(0);
+
+// 新增：自訂選單的開關狀態
+const isMenuOpen = ref(false);
+
+// 新增：用於顯示特殊頁面的狀態
+const specialPage = ref(null); // null, 'japan1', 'japan2', 'cute'
 
 const userMessage = ref(''); // 用來儲存使用者輸入的文字
 
@@ -140,10 +145,54 @@ const playFartSound = () => {
     });
   }
 };
+
+// 新增：切換選單開關的函式
+const toggleMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value;
+};
+
+// 新增：顯示特殊頁面的函式
+const showSpecialPage = (pageName) => {
+  specialPage.value = pageName;
+  isMenuOpen.value = false; // 點擊後關閉選單
+};
+
+// 新增：回到開頭的函式
+const resetApp = () => {
+  isYesClicked.value = false;
+  resultStep.value = 0;
+  userMessage.value = '';
+  errorMessage.value = '';
+  successMessage.value = '';
+  if (audioPlayer.value) {
+    audioPlayer.value.pause();
+    audioPlayer.value.currentTime = 0;
+  }
+  specialPage.value = null; // 重設特殊頁面狀態
+};
+
+// 新增：點擊選單項目後，回到開頭並關閉選單
+const resetAppAndCloseMenu = () => {
+  resetApp();
+  isMenuOpen.value = false;
+};
 </script>
 
 
 <template>
+  <!-- 新增：自訂漢堡選單，只在 cool shit 頁面顯示 -->
+  <div v-if="resultStep === 3" class="custom-menu-container">
+    <button @click="toggleMenu" class="menu-toggle-btn" :class="{ 'is-open': isMenuOpen }">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </button>
+    <div v-if="isMenuOpen" class="menu-overlay" @click="toggleMenu"></div>
+    <nav class="menu-panel" :class="{ 'is-open': isMenuOpen }">
+      <a @click="showSpecialPage('japan1')">邱餅餅日本</a>
+      <a @click="showSpecialPage('japan2')">邱餅餅日本two</a>
+      <a @click="showSpecialPage('cute')">邱餅餅可i</a>
+      <a @click="resetAppAndCloseMenu">回到開頭</a>
+    </nav>
+  </div>
   <div class="container">
     <!-- 新增：背景音樂播放器，預設隱藏 -->
     <audio ref="fartAudioPlayer" :src="fartSoundUrl"></audio>
@@ -209,7 +258,23 @@ const playFartSound = () => {
 
       <!-- 步驟 3: 顯示 cool.png 的最終頁 -->           
       <template v-else-if="resultStep === 3">
-        <img :src="coolImageUrl" alt="Cool" class="cool-image" />
+        <!-- 特殊頁面 (fixed 定位) -->
+        <template v-if="specialPage">
+          <div class="special-page-layout">
+            <div class="image-container">
+              <img :src="cute1ImageUrl" alt="可愛圖片 上">
+            </div>
+            <div class="text-container">
+              <p>這裡是中間，可以寫很多很多字...</p>
+            </div>
+            <div class="image-container">
+              <img :src="cute2ImageUrl" alt="可愛圖片 下">
+            </div>
+          </div>
+        </template>
+
+        <!-- 預設顯示 cool.png (只有在沒有特殊頁面時才顯示) -->
+        <img v-else :src="coolImageUrl" alt="Cool" class="cool-image" />
       </template>
 
       <!-- 步驟 1: 新增的文字輸入頁 -->
@@ -247,7 +312,14 @@ const playFartSound = () => {
 .container {
   display: flex; justify-content: center; align-items: center;
   height: 100vh; width: 100vw; text-align: center;
-  background-color: #fce4ec; overflow: hidden;
+  background-color: #fce4ec;
+  overflow: hidden;
+  /* 新增：為符合 iPhone 等裝置的安全區域 (劉海)，增加 padding */
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box; /* 確保 padding 不會影響整體的 100vh/100vw 計算 */
 }
 .question-container, .result-container {
   position: relative;
@@ -333,6 +405,7 @@ h2 { font-size: 2rem; color: #ad1457; margin: 0; } /* 移除預設的 margin */
   max-height: 80vh;
   border-radius: 20px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  margin-top: 40px; /* 新增：避免圖片太靠上，給選單按鈕留出空間 */
 }
 
 /* --- 新增：文字輸入框樣式 --- */
@@ -477,5 +550,136 @@ h2 { font-size: 2rem; color: #ad1457; margin: 0; } /* 移除預設的 margin */
 
 @keyframes snowfall {
   to { transform: translateY(100vh); } /* 直直落下到螢幕底部 */
+}
+
+/* --- 新增：自訂漢堡選單樣式 --- */
+.menu-toggle-btn {
+  position: fixed;
+  /* 考慮到 iPhone 安全區域 */
+  top: calc(15px + env(safe-area-inset-top, 0px));
+  left: calc(15px + env(safe-area-inset-left, 0px));
+  z-index: 1001;
+  background: transparent;
+  border: none;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.menu-toggle-btn .bar {
+  width: 30px;
+  height: 3px;
+  background: #c2185b; /* 主題深紅色 */
+  border-radius: 2px;
+  transition: all 0.3s ease-in-out;
+  margin: 4px 0;
+}
+
+/* 漢堡按鈕變叉叉的動畫 */
+.menu-toggle-btn.is-open .bar:nth-child(1) {
+  transform: translateY(11px) rotate(45deg);
+}
+.menu-toggle-btn.is-open .bar:nth-child(2) {
+  opacity: 0;
+}
+.menu-toggle-btn.is-open .bar:nth-child(3) {
+  transform: translateY(-11px) rotate(-45deg);
+}
+
+.menu-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background: rgba(252, 228, 236, 0.9); /* 半透明主題色 */
+  backdrop-filter: blur(8px); /* 毛玻璃效果 */
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
+  /* 考慮到 iPhone 安全區域 */
+  padding-top: calc(80px + env(safe-area-inset-top, 0px));
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.menu-panel.is-open {
+  transform: translateX(0);
+}
+
+.menu-panel a {
+  display: block;
+  padding: 15px 25px;
+  color: #c2185b;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menu-panel a:hover {
+  background-color: rgba(194, 24, 91, 0.1);
+}
+
+.menu-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+}
+
+/* --- 新增：特殊頁面樣式 --- */
+.special-page-layout {
+  position: fixed; /* 固定在視窗上，覆蓋其他內容 */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column; /* 改為垂直排列 */
+  /* 套用安全區域 padding 以確保全螢幕內容正確顯示 */
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
+  background-color: #fce4ec; /* 與背景色相同 */
+  z-index: 998; /* 確保在內容之上，但在選單遮罩 (999) 和選單 (1000) 之下 */
+}
+
+.special-page-layout .image-container {
+  flex: 1; /* 讓圖片容器平分剩餘空間 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden; /* 避免圖片過大時溢出 */
+}
+
+.special-page-layout .text-container {
+  flex-shrink: 0; /* 文字區塊不壓縮 */
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  color: #444;
+  line-height: 1.8;
+  text-align: center;
+}
+
+.special-page-layout img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 </style>
