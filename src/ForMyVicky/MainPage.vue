@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 // 從當前資料夾匯入資源。
 // Vite/Webpack 會處理這個路徑，並在建置時將其轉換為最終可用的 URL。
 import stickFigureImageUrl from './Man.png'; // 將路徑從 @/assets/ 改為 ./ (當前資料夾)
@@ -84,14 +84,6 @@ const noButtonStyle = computed(() => {
 // 「好」按鈕的點擊事件處理函式
 const handleYesClick = () => {
   isYesClicked.value = true;
-  // 當使用者點擊「好」之後，開始播放音樂
-  // 使用 nextTick 確保 audio 元素已經被渲染出來
-  if (audioPlayer.value) {
-    audioPlayer.value.play().catch(error => {
-      // 處理瀏覽器阻止自動播放的錯誤
-      console.error("音樂播放失敗：", error);
-    });
-  }
 };
 
 // 「不好」按鈕的滑鼠移入事件處理函式
@@ -183,6 +175,22 @@ const resetAppAndCloseMenu = () => {
   resetApp();
   isMenuOpen.value = false;
 };
+
+// 監聽 isYesClicked 的變化，在點擊「好」之後播放音樂
+watch(isYesClicked, (isClicked) => {
+  // 當 isYesClicked 變為 true 時
+  if (isClicked) {
+    // 使用 nextTick 確保 <audio> 元素已經被渲染到 DOM 中
+    nextTick(() => {
+      if (audioPlayer.value) {
+        audioPlayer.value.play().catch(error => {
+          // 處理瀏覽器阻止自動播放的錯誤
+          console.error("音樂播放失敗：", error);
+        });
+      }
+    });
+  }
+});
 </script>
 
 
@@ -201,8 +209,8 @@ const resetAppAndCloseMenu = () => {
     </nav>
   </div>
   <div class="container">
-    <!-- 新增：背景音樂播放器，預設隱藏 -->
-    <audio ref="audioPlayer" :src="christmasMusicUrl" loop v-if="false"></audio>
+    <!-- 新增：背景音樂播放器 -->
+    <audio ref="audioPlayer" :src="christmasMusicUrl" loop></audio>
 
     <!-- 下雪特效 -->
     <div class="snow-container">
