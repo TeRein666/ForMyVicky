@@ -7,6 +7,13 @@ import cute1ImageUrl from './cute1.png';
 import cute2ImageUrl from './cute2.png';
 import cute3ImageUrl from './cute3.png';
 import cute4ImageUrl from './cute4.png';  
+import japan1ImageUrl from './japan1.png';
+import japan2ImageUrl from './japan2.png';
+import japan3ImageUrl from './japan3.png';
+import japan4ImageUrl from './japan4.png';
+import foodImageUrl from './food.png';
+import girlImageUrl from './girl.png';
+import faceImageUrl from './face.png';
 // 匯入音樂檔案。請確保您在同一個資料夾下有一個名為 `christmas-music.mp3` 的音樂檔。
 import christmasMusicUrl from './music.mp3';
 import fartSoundUrl from './fart.mp3'; // 匯入放屁音效
@@ -34,7 +41,6 @@ const userMessage = ref(''); // 用來儲存使用者輸入的文字
 
 // 新增：建立一個 audio 元素的響應式引用
 const audioPlayer = ref(null);
-const fartAudioPlayer = ref(null); // 新增：放屁音效的 audio 元素引用
 
 // 新增：錯誤/成功訊息的響應式狀態
 const errorMessage = ref('');
@@ -138,12 +144,12 @@ const goToNextStep = () => {
 
 // 新增：點擊火柴人圖片播放音效的函式
 const playFartSound = () => {
-  if (fartAudioPlayer.value) {
-    fartAudioPlayer.value.currentTime = 0; // 每次點擊都從頭播放
-    fartAudioPlayer.value.play().catch(error => {
-      console.error("音效播放失敗：", error);
-    });
-  }
+  // 每次點擊都建立一個新的 Audio 物件來播放
+  // 這樣可以避免一些在不同裝置或瀏覽器上的播放問題
+  const audio = new Audio(fartSoundUrl);
+  audio.play().catch(error => {
+    console.error("音效播放失敗：", error);
+  });
 };
 
 // 新增：切換選單開關的函式
@@ -155,6 +161,7 @@ const toggleMenu = () => {
 const showSpecialPage = (pageName) => {
   specialPage.value = pageName;
   isMenuOpen.value = false; // 點擊後關閉選單
+  playFartSound();
 };
 
 // 新增：回到開頭的函式
@@ -187,16 +194,15 @@ const resetAppAndCloseMenu = () => {
     </button>
     <div v-if="isMenuOpen" class="menu-overlay" @click="toggleMenu"></div>
     <nav class="menu-panel" :class="{ 'is-open': isMenuOpen }">
-      <a @click="showSpecialPage('japan1')">邱餅餅日本</a>
-      <a @click="showSpecialPage('japan2')">邱餅餅日本two</a>
+      <a @click="showSpecialPage('japan1')">邱餅餅日本part1</a>
+      <a @click="showSpecialPage('japan2')">邱餅餅日本part2</a>
       <a @click="showSpecialPage('cute')">邱餅餅可i</a>
-      <a @click="resetAppAndCloseMenu">回到開頭</a>
+      <a @click="showSpecialPage('meandu')">it's me and u</a>
     </nav>
   </div>
   <div class="container">
     <!-- 新增：背景音樂播放器，預設隱藏 -->
-    <audio ref="fartAudioPlayer" :src="fartSoundUrl"></audio>
-    <audio ref="audioPlayer" :src="christmasMusicUrl" loop></audio>
+    <audio ref="audioPlayer" :src="christmasMusicUrl" loop v-if="false"></audio>
 
     <!-- 下雪特效 -->
     <div class="snow-container">
@@ -259,18 +265,47 @@ const resetAppAndCloseMenu = () => {
       <!-- 步驟 3: 顯示 cool.png 的最終頁 -->           
       <template v-else-if="resultStep === 3">
         <!-- 特殊頁面 (fixed 定位) -->
-        <template v-if="specialPage">
+        <template v-if="specialPage === 'japan1'">
           <div class="special-page-layout">
             <div class="image-container">
-              <img :src="cute1ImageUrl" alt="可愛圖片 上">
+              <img :src="japan3ImageUrl" alt="邱餅餅日本 上">
             </div>
             <div class="text-container">
-              <p>這裡是中間，可以寫很多很多字...</p>
+              <p>第一次去日本啦，雖然搭飛機很可怕但跟你第一次出國感覺很舒服!還想再去!</p>
             </div>
             <div class="image-container">
-              <img :src="cute2ImageUrl" alt="可愛圖片 下">
+              <img :src="japan4ImageUrl" alt="邱餅餅日本 下">
             </div>
           </div>
+        </template>
+        <template v-else-if="specialPage === 'japan2'">
+          <div class="special-page-layout">
+            <div class="image-container">
+              <img :src="japan1ImageUrl" alt="邱餅餅日本two 上">
+            </div>
+            <div class="text-container">
+              <p>跟著公司一起去，只有3天，太少了!!這次還好有邱邱，不然我可能會覺得很無聊!</p>
+            </div>
+            <div class="image-container">
+              <img :src="japan2ImageUrl" alt="邱餅餅日本two 下">
+            </div>
+          </div>
+        </template>
+        <template v-else-if="specialPage === 'cute'">
+          <div class="special-page-layout">
+            <div class="image-container">
+              <img :src="foodImageUrl" alt="邱餅餅可i 上">
+            </div>
+            <div class="text-container">
+              <p>送你麵麵啦，還有可愛寶>.<</p>
+            </div>
+            <div class="image-container">
+              <img :src="girlImageUrl" alt="邱餅餅可i 下">
+            </div>
+          </div>
+        </template>
+        <template v-else-if="specialPage === 'meandu'">
+          <img :src="faceImageUrl" alt="it's me and u" class="cool-image" />
         </template>
 
         <!-- 預設顯示 cool.png (只有在沒有特殊頁面時才顯示) -->
